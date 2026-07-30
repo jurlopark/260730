@@ -18,7 +18,7 @@ from plotly.subplots import make_subplots
 # -----------------------------
 # 기본 설정
 # -----------------------------
-st.set_page_config(page_title="전국 중학생 남녀 비율 지도", layout="wide")
+st.set_page_config(page_title="전국 중학생 남녀 비율 지도와 변동 추이", layout="wide")
 
 POP_URL = "https://raw.githubusercontent.com/greatsong/modudata/main/data/population_yearly.csv.gz"
 GEO_URL = "https://raw.githubusercontent.com/greatsong/modudata/main/data/boundaries/sigungu_kr.geojson"
@@ -86,7 +86,7 @@ latest_year = int(yearly["연도"].max())
 # -----------------------------
 # 화면 제목
 # -----------------------------
-st.title("🏫 전국 중학생 남녀 비율 지도")
+st.title("🏫 전국 중학생 남녀 비율 지도와 변동 추이")
 
 # 연도 선택 드롭다운 (기본값: 가장 최신 연도)
 year_options = sorted(yearly["연도"].unique())
@@ -163,6 +163,8 @@ fig_map.update_geos(
 )
 fig_map.update_layout(
     legend_title_text="남자 비율 구간",
+    legend=dict(font=dict(size=16), title_font=dict(size=17)),
+    hoverlabel=dict(font=dict(size=15)),
     margin=dict(l=0, r=0, t=10, b=0),
     height=650,
 )
@@ -210,9 +212,9 @@ for code in top5_small.index:
         row=1, col=2,
     )
 
-fig_trend.update_xaxes(title_text="연도")
-fig_trend.update_yaxes(title_text="남자 비율(%)")
-fig_trend.update_layout(height=450, legend_title_text="지역")
+fig_trend.update_xaxes(title_text="연도", title_font=dict(size=15), tickfont=dict(size=13))
+fig_trend.update_yaxes(title_text="남자 비율(%)", title_font=dict(size=15), tickfont=dict(size=13))
+fig_trend.update_layout(height=450, legend_title_text="지역", legend=dict(font=dict(size=13)))
 
 st.plotly_chart(fig_trend, use_container_width=True)
 
@@ -244,9 +246,9 @@ for code in top5_small.index:
         row=1, col=2,
     )
 
-fig_trend_female.update_xaxes(title_text="연도")
-fig_trend_female.update_yaxes(title_text="여자 비율(%)")
-fig_trend_female.update_layout(height=450, legend_title_text="지역")
+fig_trend_female.update_xaxes(title_text="연도", title_font=dict(size=15), tickfont=dict(size=13))
+fig_trend_female.update_yaxes(title_text="여자 비율(%)", title_font=dict(size=15), tickfont=dict(size=13))
+fig_trend_female.update_layout(height=450, legend_title_text="지역", legend=dict(font=dict(size=13)))
 
 st.plotly_chart(fig_trend_female, use_container_width=True)
 
