@@ -83,25 +83,27 @@ yearly["지역명"] = yearly["시도"] + " " + yearly["시군구"]
 # 가장 최신 연도 데이터만 뽑기 (지도용)
 # -----------------------------
 latest_year = int(yearly["연도"].max())
-latest = yearly[yearly["연도"] == latest_year].copy()
 
 # -----------------------------
 # 화면 제목
 # -----------------------------
 st.title("🏫 전국 중학생 남녀 비율 지도")
-st.caption(f"기준 연도: {latest_year}년 · 중학생 = 만 12~14세 인구 기준")
 
-# 지도 색상을 남자 비율로 볼지, 여자 비율로 볼지 선택
-metric = st.radio("지도에 표시할 기준을 선택하세요", ["남자 비율", "여자 비율"], horizontal=True)
+# 연도 선택 드롭다운 (기본값: 가장 최신 연도)
+year_options = sorted(yearly["연도"].unique())
+selected_year = st.selectbox(
+    "지도에 표시할 연도를 선택하세요",
+    year_options,
+    index=len(year_options) - 1,  # 가장 최신 연도가 기본으로 선택되게 함
+)
+st.caption(f"선택 연도: {selected_year}년 · 중학생 = 만 12~14세 인구 기준")
 
-if metric == "남자 비율":
-    metric_col = "남자비율"
-    # 값이 낮을수록(여자 많음) 파란색, 높을수록(남자 많음) 빨간색
-    color_anchor = ["#2166ac", "#67a9cf", "#f7f7f7", "#ef8a62", "#b2182b"]
-else:
-    metric_col = "여자비율"
-    # 값이 낮을수록(남자 많음) 빨간색, 높을수록(여자 많음) 파란색
-    color_anchor = ["#b2182b", "#ef8a62", "#f7f7f7", "#67a9cf", "#2166ac"]
+latest = yearly[yearly["연도"] == selected_year].copy()
+
+# 지도는 '남자 비율' 하나로 통일해서 색을 정함
+# 남자 비율이 높은 곳(남자 많음) = 파랑, 낮은 곳(여자 많음) = 빨강
+metric_col = "남자비율"
+color_anchor = ["#b2182b", "#ef8a62", "#f7f7f7", "#67a9cf", "#2166ac"]
 
 # -----------------------------
 # 선택한 기준으로 구간 나누기 (5단계, 범례에 % 구간 글자로 표시)
@@ -159,7 +161,7 @@ fig_map.update_traces(
 # 배경 지도 타일 없이 경계선만 보이도록 설정
 fig_map.update_geos(visible=False, fitbounds="locations")
 fig_map.update_layout(
-    legend_title_text=f"{metric} 구간",
+    legend_title_text="남자 비율 구간",
     margin=dict(l=0, r=0, t=10, b=0),
     height=650,
 )
@@ -167,13 +169,13 @@ fig_map.update_layout(
 st.plotly_chart(fig_map, use_container_width=True)
 
 # -----------------------------
-# 12년간 남녀 비율 변화 그래프 (위에서 고른 기준을 그대로 사용)
+# 12년간 남자 비율 변화 그래프 (선택한 연도와 무관하게 전체 기간을 보여줌)
 # -----------------------------
-st.subheader(f"📈 {yearly['연도'].min()}년 ~ {yearly['연도'].max()}년 {metric} 변화")
+st.subheader(f"📈 {yearly['연도'].min()}년 ~ {yearly['연도'].max()}년 남자 비율 변화")
 
 n_years = yearly["연도"].nunique()
 
-# 지역(시군구코드)별로 연도별 비율을 표 형태로 펼치기
+# 지역(시군구코드)별로 연도별 남자 비율을 표 형태로 펼치기
 pivot = yearly.pivot_table(index="시군구코드", columns="연도", values=metric_col)
 
 # 모든 연도 자료가 다 있는 지역만 변동 비교 대상으로 사용
@@ -188,7 +190,7 @@ name_map = yearly.drop_duplicates("시군구코드").set_index("시군구코드"
 
 fig_trend = make_subplots(
     rows=1, cols=2,
-    subplot_titles=(f"{metric} 변동이 가장 큰 지역 TOP 5", f"{metric} 변동이 가장 작은 지역 TOP 5"),
+    subplot_titles=("남자 비율 변동이 가장 큰 지역 TOP 5", "남자 비율 변동이 가장 작은 지역 TOP 5"),
 )
 
 for code in top5_big.index:
@@ -208,7 +210,7 @@ for code in top5_small.index:
     )
 
 fig_trend.update_xaxes(title_text="연도")
-fig_trend.update_yaxes(title_text=f"{metric}(%)")
+fig_trend.update_yaxes(title_text="남자 비율(%)")
 fig_trend.update_layout(height=450, legend_title_text="지역")
 
 st.plotly_chart(fig_trend, use_container_width=True)
