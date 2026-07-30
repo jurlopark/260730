@@ -111,12 +111,13 @@ color_anchor = ["#b2182b", "#ef8a62", "#f7f7f7", "#67a9cf", "#2166ac"]
 # '51% 미만', '51~52%' 처럼 너무 잘게 쪼개지는 문제가 있었습니다.
 # 그래서 누구나 이해하기 쉬운 고정된 숫자로 구간을 나눕니다.
 bin_edges = [0, 45, 48, 52, 55, 100]
+# 남자 비율만 보여주지 않고, 각 구간마다 남학생·여학생 비율을 함께 표시
 labels = [
-    "45% 미만 (여자 많음)",
-    "45~48% (여자 조금 많음)",
-    "48~52% (균형)",
-    "52~55% (남자 조금 많음)",
-    "55% 이상 (남자 많음)",
+    "남 45% 미만 · 여 55% 초과",
+    "남 45~48% · 여 52~55%",
+    "남 48~52% · 여 48~52% (균형)",
+    "남 52~55% · 여 45~48%",
+    "남 55% 이상 · 여 45% 미만",
 ]
 n_bins = len(labels)
 
@@ -162,7 +163,7 @@ fig_map.update_geos(
     framewidth=1,
 )
 fig_map.update_layout(
-    legend_title_text="남자 비율 구간",
+    legend_title_text="학생 성비 구간 (남 · 여)",
     legend=dict(font=dict(size=16), title_font=dict(size=17)),
     hoverlabel=dict(font=dict(size=15)),
     margin=dict(l=0, r=0, t=10, b=0),
