@@ -99,35 +99,30 @@ st.caption(f"선택 연도: {selected_year}년 · 중학생 = 만 12~14세 인�
 
 latest = yearly[yearly["연도"] == selected_year].copy()
 
-# 지도는 '남자 비율' 하나로 통일해서 색을 정함
-# 남자 비율이 높은 곳(남자 많음) = 파랑, 낮은 곳(여자 많음) = 빨강
+# -----------------------------
+# 구분 나누기 (남자가 많은 곳 / 여자가 많은 곳 / 같은 곳, 3가지)
+# -----------------------------
+# 비율 구간을 잘게 나누지 않고, 남학생 수와 여학생 수를 직접 비교해서 나눔
+def 성비_구분(row):
+    if row["남_중학생"] > row["여_중학생"]:
+        return "남자가 많은 곳"
+    elif row["여_중학생"] > row["남_중학생"]:
+        return "여자가 많은 곳"
+    else:
+        return "같은 곳"
+
+
+latest["비율구간"] = latest.apply(성비_구분, axis=1)
+
+labels = ["남자가 많은 곳", "같은 곳", "여자가 많은 곳"]
+color_map = {
+    "남자가 많은 곳": "#2166ac",  # 파랑
+    "같은 곳": "#f0f0f0",         # 회색(중립)
+    "여자가 많은 곳": "#b2182b",  # 빨강
+}
+
+# 아래 변화 그래프에서는 계속 비율(%)을 사용합니다
 metric_col = "남자비율"
-color_anchor = ["#b2182b", "#ef8a62", "#f7f7f7", "#67a9cf", "#2166ac"]
-
-# -----------------------------
-# 구간 나누기 (50%를 기준으로 고정된 값으로 나눔)
-# -----------------------------
-# 지역별로 값이 조금씩만 달라서 분위수(quantile)로 나누면
-# '51% 미만', '51~52%' 처럼 너무 잘게 쪼개지는 문제가 있었습니다.
-# 그래서 누구나 이해하기 쉬운 고정된 숫자로 구간을 나눕니다.
-bin_edges = [0, 45, 48, 52, 55, 100]
-# 남자 비율만 보여주지 않고, 각 구간마다 남학생·여학생 비율을 함께 표시
-labels = [
-    "남 45% 미만 · 여 55% 초과",
-    "남 45~48% · 여 52~55%",
-    "남 48~52% · 여 48~52% (균형)",
-    "남 52~55% · 여 45~48%",
-    "남 55% 이상 · 여 45% 미만",
-]
-n_bins = len(labels)
-
-latest["비율구간"] = pd.cut(
-    latest[metric_col], bins=bin_edges, labels=labels, include_lowest=True
-)
-
-positions = [i / (n_bins - 1) for i in range(n_bins)]
-sampled_colors = px.colors.sample_colorscale(color_anchor, positions)
-color_map = dict(zip(labels, sampled_colors))
 
 # -----------------------------
 # 지도 그리기
@@ -163,7 +158,7 @@ fig_map.update_geos(
     framewidth=1,
 )
 fig_map.update_layout(
-    legend_title_text="학생 성비 구간 (남 · 여)",
+    legend_title_text="학생 성비 구분",
     legend=dict(font=dict(size=16), title_font=dict(size=17)),
     hoverlabel=dict(font=dict(size=15)),
     margin=dict(l=0, r=0, t=10, b=0),
