@@ -149,12 +149,18 @@ fig_map.update_traces(
         "남자: %{customdata[2]:.1f}%<br>"
         "여자: %{customdata[3]:.1f}%<extra></extra>"
     ),
-    marker_line_color="white",
-    marker_line_width=0.5,
+    marker_line_color="#555555",
+    marker_line_width=0.6,
 )
 
-# 배경 지도 타일 없이 경계선만 보이도록 설정
-fig_map.update_geos(visible=False, fitbounds="locations")
+# 배경 지도 타일 없이 경계선만 보이도록 설정 (지도 바깥쪽에는 테두리 선을 그림)
+fig_map.update_geos(
+    visible=False,
+    fitbounds="locations",
+    showframe=True,
+    framecolor="black",
+    framewidth=1,
+)
 fig_map.update_layout(
     legend_title_text="남자 비율 구간",
     margin=dict(l=0, r=0, t=10, b=0),
