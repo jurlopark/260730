@@ -8,7 +8,6 @@
 
 import json
 
-import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -106,30 +105,26 @@ metric_col = "남자비율"
 color_anchor = ["#b2182b", "#ef8a62", "#f7f7f7", "#67a9cf", "#2166ac"]
 
 # -----------------------------
-# 선택한 기준으로 구간 나누기 (5단계, 범례에 % 구간 글자로 표시)
+# 구간 나누기 (50%를 기준으로 고정된 값으로 나눔)
 # -----------------------------
-n_bins = 5
-_, bin_edges = pd.qcut(latest[metric_col], q=n_bins, duplicates="drop", retbins=True)
-bin_edges = np.unique(np.round(bin_edges, 0))
-n_bins = len(bin_edges) - 1  # duplicates 로 인해 구간 수가 줄어들 수 있음
-
-labels = []
-for i in range(n_bins):
-    if i == 0:
-        labels.append(f"{bin_edges[i + 1]:.0f}% 미만")
-    elif i == n_bins - 1:
-        labels.append(f"{bin_edges[i]:.0f}% 이상")
-    else:
-        labels.append(f"{bin_edges[i]:.0f}~{bin_edges[i + 1]:.0f}%")
+# 지역별로 값이 조금씩만 달라서 분위수(quantile)로 나누면
+# '51% 미만', '51~52%' 처럼 너무 잘게 쪼개지는 문제가 있었습니다.
+# 그래서 누구나 이해하기 쉬운 고정된 숫자로 구간을 나눕니다.
+bin_edges = [0, 45, 48, 52, 55, 100]
+labels = [
+    "45% 미만 (여자 많음)",
+    "45~48%",
+    "48~52% (균형)",
+    "52~55%",
+    "55% 이상 (남자 많음)",
+]
+n_bins = len(labels)
 
 latest["비율구간"] = pd.cut(
     latest[metric_col], bins=bin_edges, labels=labels, include_lowest=True
 )
 
-if n_bins > 1:
-    positions = [i / (n_bins - 1) for i in range(n_bins)]
-else:
-    positions = [0.5]
+positions = [i / (n_bins - 1) for i in range(n_bins)]
 sampled_colors = px.colors.sample_colorscale(color_anchor, positions)
 color_map = dict(zip(labels, sampled_colors))
 
@@ -214,6 +209,40 @@ fig_trend.update_yaxes(title_text="남자 비율(%)")
 fig_trend.update_layout(height=450, legend_title_text="지역")
 
 st.plotly_chart(fig_trend, use_container_width=True)
+
+# -----------------------------
+# 12년간 여자 비율 변화 그래프
+# (여자 비율 = 100 - 남자 비율 이라서 변동이 큰/작은 지역은 위와 똑같습니다.
+#  다만 그래프의 값 자체는 여자 비율로 다시 그려서 보여줍니다.)
+# -----------------------------
+st.subheader(f"📈 {yearly['연도'].min()}년 ~ {yearly['연도'].max()}년 여자 비율 변화")
+
+fig_trend_female = make_subplots(
+    rows=1, cols=2,
+    subplot_titles=("여자 비율 변동이 가장 큰 지역 TOP 5", "여자 비율 변동이 가장 작은 지역 TOP 5"),
+)
+
+for code in top5_big.index:
+    sub = yearly[yearly["시군구코드"] == code].sort_values("연도")
+    fig_trend_female.add_trace(
+        go.Scatter(x=sub["연도"], y=sub["여자비율"], mode="lines+markers",
+                    name=name_map[code]),
+        row=1, col=1,
+    )
+
+for code in top5_small.index:
+    sub = yearly[yearly["시군구코드"] == code].sort_values("연도")
+    fig_trend_female.add_trace(
+        go.Scatter(x=sub["연도"], y=sub["여자비율"], mode="lines+markers",
+                    name=name_map[code]),
+        row=1, col=2,
+    )
+
+fig_trend_female.update_xaxes(title_text="연도")
+fig_trend_female.update_yaxes(title_text="여자 비율(%)")
+fig_trend_female.update_layout(height=450, legend_title_text="지역")
+
+st.plotly_chart(fig_trend_female, use_container_width=True)
 
 with st.expander("ℹ️ 데이터 안내"):
     st.write(
