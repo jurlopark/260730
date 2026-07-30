@@ -86,10 +86,28 @@ latest_year = int(yearly["연도"].max())
 latest = yearly[yearly["연도"] == latest_year].copy()
 
 # -----------------------------
-# 남자 비율 구간 나누기 (5단계, 범례에 % 구간 글자로 표시)
+# 화면 제목
+# -----------------------------
+st.title("🏫 전국 중학생 남녀 비율 지도")
+st.caption(f"기준 연도: {latest_year}년 · 중학생 = 만 12~14세 인구 기준")
+
+# 지도 색상을 남자 비율로 볼지, 여자 비율로 볼지 선택
+metric = st.radio("지도에 표시할 기준을 선택하세요", ["남자 비율", "여자 비율"], horizontal=True)
+
+if metric == "남자 비율":
+    metric_col = "남자비율"
+    # 값이 낮을수록(여자 많음) 파란색, 높을수록(남자 많음) 빨간색
+    color_anchor = ["#2166ac", "#67a9cf", "#f7f7f7", "#ef8a62", "#b2182b"]
+else:
+    metric_col = "여자비율"
+    # 값이 낮을수록(남자 많음) 빨간색, 높을수록(여자 많음) 파란색
+    color_anchor = ["#b2182b", "#ef8a62", "#f7f7f7", "#67a9cf", "#2166ac"]
+
+# -----------------------------
+# 선택한 기준으로 구간 나누기 (5단계, 범례에 % 구간 글자로 표시)
 # -----------------------------
 n_bins = 5
-_, bin_edges = pd.qcut(latest["남자비율"], q=n_bins, duplicates="drop", retbins=True)
+_, bin_edges = pd.qcut(latest[metric_col], q=n_bins, duplicates="drop", retbins=True)
 bin_edges = np.unique(np.round(bin_edges, 0))
 n_bins = len(bin_edges) - 1  # duplicates 로 인해 구간 수가 줄어들 수 있음
 
@@ -102,24 +120,16 @@ for i in range(n_bins):
     else:
         labels.append(f"{bin_edges[i]:.0f}~{bin_edges[i + 1]:.0f}%")
 
-latest["남자비율구간"] = pd.cut(
-    latest["남자비율"], bins=bin_edges, labels=labels, include_lowest=True
+latest["비율구간"] = pd.cut(
+    latest[metric_col], bins=bin_edges, labels=labels, include_lowest=True
 )
 
-# 파란색(여자 많음) -> 빨간색(남자 많음) 순서의 색
-color_anchor = ["#2166ac", "#67a9cf", "#f7f7f7", "#ef8a62", "#b2182b"]
 if n_bins > 1:
     positions = [i / (n_bins - 1) for i in range(n_bins)]
 else:
     positions = [0.5]
 sampled_colors = px.colors.sample_colorscale(color_anchor, positions)
 color_map = dict(zip(labels, sampled_colors))
-
-# -----------------------------
-# 화면 제목
-# -----------------------------
-st.title("🏫 전국 중학생 남녀 비율 지도")
-st.caption(f"기준 연도: {latest_year}년 · 중학생 = 만 12~14세 인구 기준")
 
 # -----------------------------
 # 지도 그리기
@@ -129,9 +139,9 @@ fig_map = px.choropleth(
     geojson=geojson_data,
     locations="시군구코드",
     featureidkey="properties.코드",  # geojson 속성의 '코드'와 매칭
-    color="남자비율구간",
+    color="비율구간",
     color_discrete_map=color_map,
-    category_orders={"남자비율구간": labels},
+    category_orders={"비율구간": labels},
     custom_data=["시군구", "시도", "남자비율", "여자비율"],
 )
 
@@ -149,7 +159,7 @@ fig_map.update_traces(
 # 배경 지도 타일 없이 경계선만 보이도록 설정
 fig_map.update_geos(visible=False, fitbounds="locations")
 fig_map.update_layout(
-    legend_title_text="남자 비율 구간",
+    legend_title_text=f"{metric} 구간",
     margin=dict(l=0, r=0, t=10, b=0),
     height=650,
 )
