@@ -167,14 +167,14 @@ fig_map.update_layout(
 st.plotly_chart(fig_map, use_container_width=True)
 
 # -----------------------------
-# 12년간 남녀 비율 변화 그래프
+# 12년간 남녀 비율 변화 그래프 (위에서 고른 기준을 그대로 사용)
 # -----------------------------
-st.subheader(f"📈 {yearly['연도'].min()}년 ~ {yearly['연도'].max()}년 남자 비율 변화")
+st.subheader(f"📈 {yearly['연도'].min()}년 ~ {yearly['연도'].max()}년 {metric} 변화")
 
 n_years = yearly["연도"].nunique()
 
-# 지역(시군구코드)별로 연도별 남자비율을 표 형태로 펼치기
-pivot = yearly.pivot_table(index="시군구코드", columns="연도", values="남자비율")
+# 지역(시군구코드)별로 연도별 비율을 표 형태로 펼치기
+pivot = yearly.pivot_table(index="시군구코드", columns="연도", values=metric_col)
 
 # 모든 연도 자료가 다 있는 지역만 변동 비교 대상으로 사용
 pivot_full = pivot.dropna()
@@ -188,13 +188,13 @@ name_map = yearly.drop_duplicates("시군구코드").set_index("시군구코드"
 
 fig_trend = make_subplots(
     rows=1, cols=2,
-    subplot_titles=("남자 비율 변동이 가장 큰 지역 TOP 5", "남자 비율 변동이 가장 작은 지역 TOP 5"),
+    subplot_titles=(f"{metric} 변동이 가장 큰 지역 TOP 5", f"{metric} 변동이 가장 작은 지역 TOP 5"),
 )
 
 for code in top5_big.index:
     sub = yearly[yearly["시군구코드"] == code].sort_values("연도")
     fig_trend.add_trace(
-        go.Scatter(x=sub["연도"], y=sub["남자비율"], mode="lines+markers",
+        go.Scatter(x=sub["연도"], y=sub[metric_col], mode="lines+markers",
                     name=name_map[code]),
         row=1, col=1,
     )
@@ -202,13 +202,13 @@ for code in top5_big.index:
 for code in top5_small.index:
     sub = yearly[yearly["시군구코드"] == code].sort_values("연도")
     fig_trend.add_trace(
-        go.Scatter(x=sub["연도"], y=sub["남자비율"], mode="lines+markers",
+        go.Scatter(x=sub["연도"], y=sub[metric_col], mode="lines+markers",
                     name=name_map[code]),
         row=1, col=2,
     )
 
 fig_trend.update_xaxes(title_text="연도")
-fig_trend.update_yaxes(title_text="남자 비율(%)")
+fig_trend.update_yaxes(title_text=f"{metric}(%)")
 fig_trend.update_layout(height=450, legend_title_text="지역")
 
 st.plotly_chart(fig_trend, use_container_width=True)
